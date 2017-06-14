@@ -19,8 +19,7 @@ def get_wordnet_pos(treebank_tag):
         return ""
 
 def ayir(text, karistir=True):
-	text = text.lower()
-	text = text.replace(".", " ")
+
 	text = nltk.word_tokenize(text)
 	tagged_text = nltk.pos_tag(text)
 
