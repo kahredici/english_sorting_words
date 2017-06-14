@@ -1,7 +1,9 @@
-from flask import Flask, request
+from flask import Flask, request, url_for
 from pymongo import MongoClient
 import json
 import normallestirici
+import requests
+
 
 app = Flask(__name__)
 app.debug = True
@@ -48,9 +50,19 @@ def index():
 	return json.dumps(word)
 
 @app.route("/c",methods=['GET'])
-def cumle():
-	k = request.args
-	searching_sentence = normallestirici.ayir(k['sentence'])
+def cumle_api():
+	k = request.args['sentence']
+	print(k)
+	print()
+	print()
+	print()
+	noktalama_isareleri = "abcdefgğhıijklmnoöpqrsştuüvwxyz"
+	noktalama_isareleri += noktalama_isareleri.upper()
+	k = [x if x in noktalama_isareleri else " " for x in k ]
+	k = ''.join(k)
+	print(k)
+
+	searching_sentence = normallestirici.ayir(k)
 
 	ret = []
 	for searching_word in searching_sentence:
@@ -62,17 +74,37 @@ def cumle():
 
 	newlist = sorted(ret, key=lambda k: k['place']) 
 
-	# k = ""
-	# for i in newlist:
-	# 	if i['place'] > 1000:
-	# 		k += "<ul>"
-	# 		k += "<li>" + str(i['place']) + "</li>"
-	# 		k += "<li>" + i['word'] + "</li>"
-	# 		k += "</ul>"
-	# k += str(len(newlist))
-	# return k
+
 	return json.dumps(newlist)
 
+@app.route("/cumle",methods=["GET","POST"])
+def cumle_html():
+	if request.method == 'POST':
+		k= request.form['cumle']
 
+		noktalama_isareleri = "abcdefgğhıijklmnoöpqrsştuüvwxyz"
+		noktalama_isareleri += noktalama_isareleri.upper()
+		k = [x if x in noktalama_isareleri else " " for x in k ]
+		k = ''.join(k)
 
-app.run()
+		foo = "http://127.0.0.1:5000/c"+"?sentence="+k
+		newlist = json.loads(requests.get(foo).text)
+
+		k = ""
+		for i in newlist:
+			if i['place'] > 500:
+				k += "<ul>"
+				k += "<li>" + str(i['place']) + "</li>"
+				k += "<li>" + i['word'] + "</li>"
+				k += "</ul>"
+		k += str(len(newlist))
+		return k
+
+	html = """
+		<form action="/cumle" method="post">
+		  Cumle: <input type="text" name="cumle"><br>
+		  <input type="submit" value="Submit">
+		</form>
+	"""
+	return html
+app.run(threaded=True)
